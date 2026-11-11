@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.models import Event, Observation, Property, Score
+from app.models import Observation, Property, Score
 from app.schemas.score import Evidence
 
 

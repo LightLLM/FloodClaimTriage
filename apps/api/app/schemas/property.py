@@ -1,10 +1,11 @@
 """Property schemas"""
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from geojson_pydantic import Point
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class PropertyCreate(BaseModel):
@@ -22,9 +23,11 @@ class PropertyCreate(BaseModel):
 class Property(BaseModel):
     """Schema for property response"""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     external_property_id: str
-    geometry: dict
+    geometry: dict[str, Any]
     address_hash: str | None = None
     building_type: str | None = None
     exposure_value: Decimal | None = None
@@ -33,11 +36,8 @@ class Property(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class PropertyResponse(Property):
     """Schema for detailed property response with scores"""
 
-    latest_score: dict | None = None
+    latest_score: dict[str, Any] | None = None

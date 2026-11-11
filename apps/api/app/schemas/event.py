@@ -1,9 +1,10 @@
 """Event schemas"""
 from datetime import date, datetime
+from typing import Any
 from uuid import UUID
 
-from geojson_pydantic import Feature, FeatureCollection, Polygon
-from pydantic import BaseModel, Field
+from geojson_pydantic import Polygon
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EventCreate(BaseModel):
@@ -19,32 +20,30 @@ class EventCreate(BaseModel):
 class Event(BaseModel):
     """Schema for event response"""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     event_type: str
     name: str
     event_date: date
-    geometry: dict | None = None
+    geometry: dict[str, Any] | None = None
     stac_collection_id: str | None = None
     status: str
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class EventResponse(BaseModel):
     """Schema for detailed event response"""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     event_type: str
     name: str
     event_date: date
-    geometry: dict | None = None
+    geometry: dict[str, Any] | None = None
     stac_collection_id: str | None = None
     status: str
     created_at: datetime
     property_count: int = 0
     scored_count: int = 0
-
-    class Config:
-        from_attributes = True

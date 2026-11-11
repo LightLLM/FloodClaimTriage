@@ -1,7 +1,7 @@
 """Triage and scoring endpoints"""
 import csv
 from io import StringIO
-from typing import Annotated
+from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -55,7 +55,7 @@ async def get_triage_queue(
     ).offset(skip).limit(limit)
 
     result = await session.execute(query)
-    rows = result.all()
+    rows = cast(list[tuple[Score, Property]], list(result.all()))
 
     triage_items = []
     for score, prop in rows:
@@ -220,7 +220,7 @@ async def export_triage_csv(
     )
 
     result = await session.execute(query)
-    rows = result.all()
+    rows = cast(list[tuple[Score, Property]], list(result.all()))
 
     # Create CSV in memory
     output = StringIO()

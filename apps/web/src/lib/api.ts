@@ -1,5 +1,16 @@
 import axios, { AxiosInstance } from 'axios'
-import type { LoginRequest, LoginResponse, Event, Property, TriageItem, PropertyEvidence } from '@/types'
+import type {
+  LoginRequest,
+  LoginResponse,
+  Event,
+  Property,
+  TriageItem,
+  PropertyEvidence,
+  User,
+  ScoreEventResult,
+  ReviewScoreResult,
+  HealthStatus,
+} from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -14,7 +25,6 @@ class ApiClient {
       },
     })
 
-    // Add request interceptor to include auth token
     this.client.interceptors.request.use((config) => {
       const token = localStorage.getItem('access_token')
       if (token) {
@@ -23,23 +33,19 @@ class ApiClient {
       return config
     })
 
-    // Add response interceptor to handle auth errors
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
         if (error.response?.status === 401) {
-          // Token expired, try to refresh
           const refreshToken = localStorage.getItem('refresh_token')
           if (refreshToken) {
             try {
               const response = await this.refreshToken(refreshToken)
               localStorage.setItem('access_token', response.access_token)
               localStorage.setItem('refresh_token', response.refresh_token)
-              // Retry original request
               error.config.headers.Authorization = `Bearer ${response.access_token}`
               return this.client.request(error.config)
             } catch {
-              // Refresh failed, logout
               localStorage.clear()
               window.location.href = '/login'
             }
@@ -53,7 +59,6 @@ class ApiClient {
     )
   }
 
-  // Auth
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const { data } = await this.client.post<LoginResponse>('/auth/login', credentials)
     return data
@@ -64,12 +69,11 @@ class ApiClient {
     return data
   }
 
-  async getMe(): Promise<any> {
-    const { data } = await this.client.get('/auth/me')
+  async getMe(): Promise<User> {
+    const { data } = await this.client.get<User>('/auth/me')
     return data
   }
 
-  // Events
   async getEvents(): Promise<Event[]> {
     const { data } = await this.client.get<Event[]>('/events')
     return data
@@ -85,14 +89,13 @@ class ApiClient {
     return data
   }
 
-  async scoreEvent(eventId: string, forceRescore: boolean = false): Promise<any> {
-    const { data } = await this.client.post(`/events/${eventId}/score`, null, {
+  async scoreEvent(eventId: string, forceRescore: boolean = false): Promise<ScoreEventResult> {
+    const { data } = await this.client.post<ScoreEventResult>(`/events/${eventId}/score`, null, {
       params: { force_rescore: forceRescore },
     })
     return data
   }
 
-  // Properties
   async getProperties(skip: number = 0, limit: number = 100): Promise<Property[]> {
     const { data } = await this.client.get<Property[]>('/properties', {
       params: { skip, limit },
@@ -105,7 +108,6 @@ class ApiClient {
     return data
   }
 
-  // Triage
   async getTriageQueue(
     eventId: string,
     options?: {
@@ -133,8 +135,8 @@ class ApiClient {
     action: 'accept' | 'override',
     reason?: string,
     newPriority?: string
-  ): Promise<any> {
-    const { data } = await this.client.post(`/scores/${scoreId}/review`, null, {
+  ): Promise<ReviewScoreResult> {
+    const { data } = await this.client.post<ReviewScoreResult>(`/scores/${scoreId}/review`, null, {
       params: { action, reason, new_priority: newPriority },
     })
     return data
@@ -147,9 +149,8 @@ class ApiClient {
     return data
   }
 
-  // Health
-  async healthCheck(): Promise<any> {
-    const { data } = await axios.get(`${API_URL}/health`)
+  async healthCheck(): Promise<HealthStatus> {
+    const { data } = await axios.get<HealthStatus>(`${API_URL}/health`)
     return data
   }
 }

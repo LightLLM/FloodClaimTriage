@@ -1,9 +1,10 @@
 """Score schemas"""
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Evidence(BaseModel):
@@ -35,6 +36,8 @@ class ScoreCreate(BaseModel):
 class Score(BaseModel):
     """Schema for score response"""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     property_id: UUID
     event_id: UUID
@@ -43,17 +46,14 @@ class Score(BaseModel):
     damage_confidence: str
     inspection_priority: str
     recommended_action: str
-    evidence: dict
+    evidence: dict[str, Any]
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class ScoreResponse(Score):
     """Schema for detailed score response with property info"""
 
-    property: dict | None = None
+    property: dict[str, Any] | None = None
 
 
 class TriageItem(BaseModel):
@@ -61,7 +61,7 @@ class TriageItem(BaseModel):
 
     property_id: UUID
     external_property_id: str
-    geometry: dict
+    geometry: dict[str, Any]
     exposure_value: Decimal | None
     damage_probability: Decimal
     inspection_priority: str

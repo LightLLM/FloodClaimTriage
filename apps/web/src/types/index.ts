@@ -1,3 +1,9 @@
+export interface GeoJsonGeometry {
+  type: string
+  coordinates: number[] | number[][] | number[][][] | number[][][][]
+  [key: string]: unknown
+}
+
 export interface User {
   id: string
   email: string
@@ -26,7 +32,7 @@ export interface Event {
   event_type: string
   name: string
   event_date: string
-  geometry?: any
+  geometry?: GeoJsonGeometry | null
   stac_collection_id?: string
   status: string
   created_at: string
@@ -37,7 +43,7 @@ export interface Event {
 export interface Property {
   id: string
   external_property_id: string
-  geometry: any
+  geometry: GeoJsonGeometry
   address_hash?: string
   building_type?: string
   exposure_value?: number
@@ -74,7 +80,7 @@ export interface Evidence {
 export interface TriageItem {
   property_id: string
   external_property_id: string
-  geometry: any
+  geometry: GeoJsonGeometry | Record<string, never>
   exposure_value?: number
   damage_probability: number
   inspection_priority: 'P1' | 'P2' | 'P3'
@@ -100,4 +106,25 @@ export interface PropertyEvidence {
     exposure_value?: number
     region?: string
   }
+}
+
+export interface ScoreEventResult {
+  event_id: string
+  scored_count: number
+  skipped_count: number
+  total_properties: number
+}
+
+export interface ReviewScoreResult {
+  score_id: string
+  action: string
+  updated_priority: string
+  audit_event_id: string
+}
+
+export interface HealthStatus {
+  status: string
+  version: string
+  model_version: string
+  environment: string
 }

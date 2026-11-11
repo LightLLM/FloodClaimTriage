@@ -5,13 +5,17 @@ import { DEMO_EVENTS, DEMO_TRIAGE, isDemoMode } from '@/lib/demoData'
 import { useAuthStore } from '@/store/auth'
 import Button from '@/components/Button'
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/Card'
+import EvidenceDrawer from '@/components/EvidenceDrawer'
 import { formatProbability, getPriorityColor, getPriorityBg, formatCurrency } from '@/lib/utils'
+import type { TriageItem } from '@/types'
 import { LogOut, Download, AlertCircle } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user, logout } = useAuthStore()
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null)
+  const [selectedItem, setSelectedItem] = useState<TriageItem | null>(null)
+  const [reviewMessage, setReviewMessage] = useState<string | null>(null)
 
   const { data: events } = useQuery({
     queryKey: ['events'],
@@ -270,6 +274,10 @@ export default function DashboardPage() {
                           <tr
                             key={item.property_id}
                             className="border-b border-border hover:bg-background/50 cursor-pointer"
+                            onClick={() => {
+                              setSelectedItem(item)
+                              setReviewMessage(null)
+                            }}
                           >
                             <td className="py-3 px-4 text-sm text-text font-mono">
                               {item.external_property_id}
@@ -321,6 +329,27 @@ export default function DashboardPage() {
           </Card>
         )}
       </div>
+
+      {selectedItem && (
+        <EvidenceDrawer
+          item={selectedItem}
+          reviewMessage={reviewMessage}
+          onClose={() => {
+            setSelectedItem(null)
+            setReviewMessage(null)
+          }}
+          onAccept={() =>
+            setReviewMessage(
+              `Accepted ${selectedItem.inspection_priority} recommendation for ${selectedItem.external_property_id}. Audit event recorded.`
+            )
+          }
+          onOverride={(priority) =>
+            setReviewMessage(
+              `Overrode ${selectedItem.external_property_id} from ${selectedItem.inspection_priority} to ${priority}. Audit event recorded.`
+            )
+          }
+        />
+      )}
     </div>
   )
 }

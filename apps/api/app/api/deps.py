@@ -1,4 +1,5 @@
 """API dependencies"""
+from collections.abc import Awaitable, Callable
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -53,7 +54,7 @@ async def get_current_user(
         ) from None
 
 
-async def require_role(required_roles: list[str]) -> None:
+def require_role(required_roles: list[str]) -> Callable[..., Awaitable[User]]:
     """Dependency factory for role-based access control"""
 
     async def check_role(current_user: Annotated[User, Depends(get_current_user)]) -> User:

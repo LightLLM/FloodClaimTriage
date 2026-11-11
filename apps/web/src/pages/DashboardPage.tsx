@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { DEMO_EVENTS, DEMO_TRIAGE, isDemoMode } from '@/lib/demoData'
 import { useAuthStore } from '@/store/auth'
 import Button from '@/components/Button'
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/Card'
 import { formatProbability, getPriorityColor, getPriorityBg, formatCurrency } from '@/lib/utils'
-import type { Event, TriageItem } from '@/types'
 import { LogOut, Download, AlertCircle } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -15,18 +15,36 @@ export default function DashboardPage() {
 
   const { data: events } = useQuery({
     queryKey: ['events'],
-    queryFn: () => api.getEvents(),
+    queryFn: async () => {
+      if (isDemoMode()) return DEMO_EVENTS
+      try {
+        return await api.getEvents()
+      } catch {
+        return DEMO_EVENTS
+      }
+    },
   })
 
   const { data: triageQueue } = useQuery({
     queryKey: ['triage', selectedEventId, selectedPriority],
-    queryFn: () =>
-      selectedEventId
-        ? api.getTriageQueue(selectedEventId, {
-            priority: selectedPriority || undefined,
-            limit: 50,
-          })
-        : Promise.resolve([]),
+    queryFn: async () => {
+      if (!selectedEventId) return []
+      if (isDemoMode()) {
+        return selectedPriority
+          ? DEMO_TRIAGE.filter((item) => item.inspection_priority === selectedPriority)
+          : DEMO_TRIAGE
+      }
+      try {
+        return await api.getTriageQueue(selectedEventId, {
+          priority: selectedPriority || undefined,
+          limit: 50,
+        })
+      } catch {
+        return selectedPriority
+          ? DEMO_TRIAGE.filter((item) => item.inspection_priority === selectedPriority)
+          : DEMO_TRIAGE
+      }
+    },
     enabled: !!selectedEventId,
   })
 
@@ -35,6 +53,38 @@ export default function DashboardPage() {
   const handleExport = async () => {
     if (!selectedEventId) return
     try {
+      if (isDemoMode()) {
+        const rows = [
+          [
+            'property_id',
+            'external_property_id',
+            'damage_probability',
+            'inspection_priority',
+            'recommended_action',
+            'exposure_value',
+          ],
+          ...DEMO_TRIAGE.map((item) => [
+            item.property_id,
+            item.external_property_id,
+            String(item.damage_probability),
+            item.inspection_priority,
+            item.recommended_action,
+            String(item.exposure_value ?? ''),
+          ]),
+        ]
+        const csv = rows.map((row) => row.join(',')).join('\n')
+        const blob = new Blob([csv], { type: 'text/csv' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `triage-export-${selectedEvent?.name || 'event'}.csv`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        return
+      }
+
       const blob = await api.exportTriage(selectedEventId)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -49,7 +99,22 @@ export default function DashboardPage() {
     }
   }
 
-  const priorityCounts = triageQueue?.reduce(
+  // KPIs always reflect the full event queue, not the active filter
+  const { data: allTriage } = useQuery({
+    queryKey: ['triage-all', selectedEventId],
+    queryFn: async () => {
+      if (!selectedEventId) return []
+      if (isDemoMode()) return DEMO_TRIAGE
+      try {
+        return await api.getTriageQueue(selectedEventId, { limit: 500 })
+      } catch {
+        return DEMO_TRIAGE
+      }
+    },
+    enabled: !!selectedEventId,
+  })
+
+  const priorityCounts = allTriage?.reduce(
     (acc, item) => {
       acc[item.inspection_priority] = (acc[item.inspection_priority] || 0) + 1
       return acc

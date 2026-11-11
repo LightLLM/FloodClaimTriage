@@ -1,10 +1,10 @@
 FROM node:20-slim AS base
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9.15.0
 
 FROM base AS dependencies
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* .npmrc ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --config.minimum-release-age=0
 
 FROM base AS build
 WORKDIR /app
@@ -15,7 +15,7 @@ RUN pnpm build
 FROM base AS dev
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* .npmrc ./
-RUN pnpm install
+RUN pnpm install --config.minimum-release-age=0
 COPY . .
 EXPOSE 5173
 CMD ["pnpm", "dev", "--host", "0.0.0.0"]

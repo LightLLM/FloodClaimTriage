@@ -45,6 +45,8 @@
     "jsdom": "^24.0.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
-  }
+    "onlyBuiltDependencies": ["esbuild"],
+    "minimumReleaseAge": 0
+  },
+  "packageManager": "pnpm@9.15.0"
 }

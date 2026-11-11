@@ -49,11 +49,11 @@ jobs:
           node-version: '20'
 
       - name: Install pnpm
-        run: npm install -g pnpm
+        run: npm install -g pnpm@9.15.0
 
       - name: Install dependencies
         working-directory: ./apps/web
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --config.minimum-release-age=0
 
       - name: Run linting
         working-directory: ./apps/web

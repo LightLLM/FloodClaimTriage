@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main, cursor/*]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: flood_triage_test
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        working-directory: ./apps/api
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Run linting
+        working-directory: ./apps/api
+        run: |
+          ruff check .
+
+      - name: Run type checking
+        working-directory: ./apps/api
+        run: |
+          mypy app
+
+      - name: Run tests
+        working-directory: ./apps/api
+        env:
+          DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/flood_triage_test
+        run: |
+          pytest -v --cov=app --cov-report=term-missing
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        working-directory: ./apps/web
+        run: pnpm install
+
+      - name: Run linting
+        working-directory: ./apps/web
+        run: pnpm lint
+
+      - name: Run type checking
+        working-directory: ./apps/web
+        run: pnpm typecheck
+
+      - name: Build
+        working-directory: ./apps/web
+        run: pnpm build
+
+  docker-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: |
+          docker compose build

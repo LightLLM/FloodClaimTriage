@@ -49,4 +49,4 @@ def decode_token(token: str) -> dict[str, Any]:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
         return payload
     except JWTError:
-        raise ValueError("Invalid token")
+        raise ValueError("Invalid token") from None

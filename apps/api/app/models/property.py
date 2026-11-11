@@ -4,7 +4,7 @@ from decimal import Decimal
 from uuid import UUID, uuid4
 
 from geoalchemy2 import Geometry
-from sqlalchemy import DateTime, Numeric, String, Text
+from sqlalchemy import DateTime, Numeric, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base

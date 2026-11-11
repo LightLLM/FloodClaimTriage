@@ -3,7 +3,7 @@ RUN npm install -g pnpm
 
 FROM base AS dependencies
 WORKDIR /app
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json pnpm-lock.yaml* .npmrc ./
 RUN pnpm install --frozen-lockfile
 
 FROM base AS build
@@ -14,7 +14,7 @@ RUN pnpm build
 
 FROM base AS dev
 WORKDIR /app
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json pnpm-lock.yaml* .npmrc ./
 RUN pnpm install
 COPY . .
 EXPOSE 5173

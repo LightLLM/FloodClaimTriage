@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main, cursor/*]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        working-directory: ./apps/api
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Run linting
+        working-directory: ./apps/api
+        run: ruff check .
+
+      - name: Run type checking
+        working-directory: ./apps/api
+        run: mypy app
+
+      - name: Run tests
+        working-directory: ./apps/api
+        run: pytest -v --cov=app --cov-report=term-missing
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9.15.0
+
+      - name: Install dependencies
+        working-directory: ./apps/web
+        run: pnpm install --frozen-lockfile --config.minimum-release-age=0
+
+      - name: Run linting
+        working-directory: ./apps/web
+        run: pnpm lint
+
+      - name: Run type checking
+        working-directory: ./apps/web
+        run: pnpm typecheck
+
+      - name: Run unit tests
+        working-directory: ./apps/web
+        run: pnpm test
+
+      - name: Build
+        working-directory: ./apps/web
+        run: pnpm build
+
+  docker-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -t flood-triage-api ./apps/api
+
+      - name: Build Web image
+        run: docker build -t flood-triage-web ./apps/web --target dev
